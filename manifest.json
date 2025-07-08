@@ -1,0 +1,12 @@
+ {
+    "name": "짝맞추기 게임",
+    "short_name": "짝맞추기",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#f0f0f0",
+    "theme_color": "#f0f0f0",
+    "icons": [
+      { "src": "뒷면.png", "sizes": "192x192", "type": "image/png" },
+      { "src": "뒷면.png", "sizes": "512x512", "type": "image/png" }
+    ]
+  }
