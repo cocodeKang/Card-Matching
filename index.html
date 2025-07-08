@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>짝맞추기 게임</title>
+  <!-- PWA 설정 -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#f0f0f0" />
   <style>
     body {
       display: flex;
@@ -50,6 +53,14 @@
       pointer-events: none;
     }
   </style>
+  <script>
+    // 서비스 워커 등록
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js');
+      });
+    }
+  </script>
 </head>
 <body>
   <div id="game-board"></div>
@@ -126,5 +137,44 @@
       }
     });
   </script>
+
+  <!--
+  추가 파일:
+  1) manifest.json
+  {
+    "name": "짝맞추기 게임",
+    "short_name": "짝맞추기",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#f0f0f0",
+    "theme_color": "#f0f0f0",
+    "icons": [
+      { "src": "뒷면.png", "sizes": "192x192", "type": "image/png" },
+      { "src": "뒷면.png", "sizes": "512x512", "type": "image/png" }
+    ]
+  }
+
+  2) service-worker.js
+  const CACHE_NAME = 'matching-pairs-cache-v1';
+  const urlsToCache = [
+    '.',
+    'index.html',
+    '뒷면.png',
+    '기도.png',
+    '말씀.png',
+    '성례.png',
+    '은혜.png'
+  ];
+  self.addEventListener('install', event => {
+    event.waitUntil(
+      caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
+    );
+  });
+  self.addEventListener('fetch', event => {
+    event.respondWith(
+      caches.match(event.request).then(response => response || fetch(event.request))
+    );
+  });
+  -->
 </body>
 </html>
