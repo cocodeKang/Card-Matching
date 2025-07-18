@@ -1,25 +1,26 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>짝맞추기 게임</title>
   <!-- PWA 설정 -->
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#f0f0f0" />
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#f0f0f0">
   <style>
     body {
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
-      height: 100vh;
       background: #f0f0f0;
       margin: 0;
+      padding: 20px 0;
     }
     #game-board {
       display: grid;
       grid-template-columns: repeat(4, 100px);
       grid-gap: 10px;
+      margin-bottom: 20px;
     }
     .card {
       width: 100px;
@@ -38,19 +39,36 @@
       height: 100%;
       backface-visibility: hidden;
       border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9em;
+      text-align: center;
+      padding: 5px;
+      box-sizing: border-box;
     }
     .card .front {
       transform: rotateY(180deg);
-      background-size: cover;
-      background-position: center;
+      background: #fff;
     }
     .card .back {
       background-image: url('뒷면.png');
       background-size: cover;
       background-position: center;
     }
-    .card.locked {
-      pointer-events: none;
+    #task-list {
+      width: 440px;
+      background: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    #task-list ol {
+      margin: 0;
+      padding-left: 20px;
+    }
+    #task-list li {
+      margin-bottom: 5px;
     }
   </style>
   <script>
@@ -64,37 +82,58 @@
 </head>
 <body>
   <div id="game-board"></div>
+  <div id="task-list">
+    <ol>
+      <li>성례 - 물 떠주기</li>
+      <li>말씀 - 성경책 꽂기</li>
+      <li>기도 - 기도로 죄 부수기</li>
+      <li>말씀 - 성경책 가져오기</li>
+      <li>은혜 - 하이파이브</li>
+      <li>은혜 - 패스</li>
+      <li>기도 - 끝까지 기도하기</li>
+      <li>성례 - 손으로 찢어 성례 만들기</li>
+    </ol>
+  </div>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      const values = ['기도','말씀','성례','은혜'];
-      let cards = values.concat(values);
+      const tasks = [
+        { category: '성례', text: '물 떠주기' },
+        { category: '말씀', text: '성경책 꽂기' },
+        { category: '기도', text: '기도로 죄 부수기' },
+        { category: '말씀', text: '성경책 가져오기' },
+        { category: '은혜', text: '하이파이브' },
+        { category: '은혜', text: '패스' },
+        { category: '기도', text: '끝까지 기도하기' },
+        { category: '성례', text: '손으로 찢어 성례 만들기' }
+      ];
+      // 카드 배열: tasks duplicated for matching pairs
+      let cards = tasks.concat(tasks);
       shuffle(cards);
 
       const board = document.getElementById('game-board');
       let first = null, second = null;
       let lockBoard = false;
 
-      cards.forEach(value => {
+      cards.forEach((task, index) => {
         const card = document.createElement('div');
         card.classList.add('card');
-        card.dataset.value = value;
+        card.dataset.category = task.category;
+        card.dataset.text = task.text;
         card.innerHTML = `
           <div class="face back"></div>
-          <div class="face front" style="background-image:url('${value}.png')"></div>
+          <div class="face front">${task.text}</div>
         `;
         board.appendChild(card);
         card.addEventListener('click', flipCard);
       });
 
+      // 처음 3초간 카드 전부 앞면 공개
       const allCards = document.querySelectorAll('.card');
       allCards.forEach(c => c.classList.add('flipped'));
-      setTimeout(() => {
-        allCards.forEach(c => c.classList.remove('flipped'));
-      }, 3000);
+      setTimeout(() => allCards.forEach(c => c.classList.remove('flipped')), 3000);
 
       function flipCard() {
         if (lockBoard) return;
-        if (this.classList.contains('locked')) return;
         if (this === first) return;
 
         this.classList.add('flipped');
@@ -103,16 +142,14 @@
           first = this;
           return;
         }
-
         second = this;
         checkMatch();
       }
 
       function checkMatch() {
-        const isMatch = first.dataset.value === second.dataset.value;
-        if (isMatch) {
-          first.classList.add('locked');
-          second.classList.add('locked');
+        const match = first.dataset.category === second.dataset.category;
+        if (match) {
+          // 맞춘 카드는 flip 유지, but clickable
           resetTurn();
         } else {
           lockBoard = true;
@@ -137,44 +174,5 @@
       }
     });
   </script>
-
-  <!--
-  추가 파일:
-  1) manifest.json
-  {
-    "name": "짝맞추기 게임",
-    "short_name": "짝맞추기",
-    "start_url": ".",
-    "display": "standalone",
-    "background_color": "#f0f0f0",
-    "theme_color": "#f0f0f0",
-    "icons": [
-      { "src": "뒷면.png", "sizes": "192x192", "type": "image/png" },
-      { "src": "뒷면.png", "sizes": "512x512", "type": "image/png" }
-    ]
-  }
-
-  2) service-worker.js
-  const CACHE_NAME = 'matching-pairs-cache-v1';
-  const urlsToCache = [
-    '.',
-    'index.html',
-    '뒷면.png',
-    '기도.png',
-    '말씀.png',
-    '성례.png',
-    '은혜.png'
-  ];
-  self.addEventListener('install', event => {
-    event.waitUntil(
-      caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
-    );
-  });
-  self.addEventListener('fetch', event => {
-    event.respondWith(
-      caches.match(event.request).then(response => response || fetch(event.request))
-    );
-  });
-  -->
 </body>
 </html>
